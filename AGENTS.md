@@ -2,56 +2,64 @@
 
 ## Project Structure & Module Organization
 
-This repository is a Flutter app named `quick_clock`. The current generated structure is:
+This repository is the Spring Boot backend for QuickClock.
 
-- `lib/` for Dart application code.
-- `test/` for widget and unit tests.
-- `android/` for the Android host project.
-- `PROJECT_CONTEXT.md` for product rules and story planning.
+- `src/main/java/br/com/pabelis/quickclock/domain/` contains domain records, entities, and rules.
+- `src/main/java/br/com/pabelis/quickclock/application/` contains use cases and ports.
+- `src/main/java/br/com/pabelis/quickclock/adapters/` contains inbound and outbound adapters, such as HTTP controllers and persistence.
+- `src/main/resources/` contains Spring configuration.
+- `src/test/java/` contains unit and integration tests.
+- `PROJECT_CONTEXT.md` contains shared product rules.
 
-Future feature code should stay under `lib/` and follow the planned modules: `features/`, `data/`, `models/`, and `shared/`.
+Keep business rules out of controllers. Controllers should call application use cases.
 
 ## Build, Test, and Development Commands
 
-Use the Flutter CLI from the repository root:
+Use Maven from the repository root:
 
-- `flutter pub get` - install Dart and Flutter dependencies.
-- `flutter analyze` - run static analysis and lints.
-- `flutter test` - run automated tests.
-- `flutter run` - run on a connected Android device or emulator.
-- `flutter build apk --debug` - create a debug APK.
+- `mvn test` - run automated tests.
+- `mvn spring-boot:run` - run the API locally.
+- `mvn package` - build the executable jar.
+- `docker build -t quickclock-backend .` - build the container image.
+- `docker run --rm -p 8080:8080 quickclock-backend` - run the API container.
 
-Do not add native Android or iOS code unless the feature cannot be built in Dart/Flutter.
+Health check:
+
+```bash
+curl http://localhost:8080/api/health
+```
 
 ## Coding Style & Naming Conventions
 
-Follow `flutter_lints` from `analysis_options.yaml`. Format Dart code before committing:
+Use Java 21 and Spring Boot. Follow hexagonal architecture:
 
-```bash
-dart format lib test
-```
+- Domain classes must not depend on Spring.
+- Application services coordinate use cases.
+- Adapters handle HTTP, persistence, and external tools.
 
-Use `PascalCase` for widgets/classes, `camelCase` for variables and methods, and `snake_case.dart` for Dart filenames. Keep widgets focused and move reusable UI into `shared/` when it appears in more than one feature.
+Use `PascalCase` for classes, `camelCase` for methods and fields, and package names in lowercase. Prefer small classes with explicit names, for example `CreateCompanyUseCase` or `WorkDayController`.
 
 ## Testing Guidelines
 
-Add tests with each behavioral change. Use `flutter_test` for widget tests and plain Dart tests for business rules.
+Use JUnit 5 and Spring Boot Test. Write tests with each behavior change.
 
-Name tests by behavior, for example `shows the app shell` or `calculates month total with marked periods`. Run `flutter test` before opening a pull request.
+Prefer fast unit tests for domain and application rules. Use Spring MVC tests for controllers and full context tests only when wiring matters.
+
+Test names should describe behavior, for example `returnsOkStatus` or `rejectsFutureWorkDay`.
 
 ## Commit & Pull Request Guidelines
 
 Use Conventional Commits with a scope and simple English:
 
-- `feat(home): add period buttons`
-- `fix(report): hide empty days`
-- `docs(context): update story plan`
+- `feat(api): add health endpoint`
+- `test(workday): cover future date rejection`
+- `docs(readme): add container commands`
 
-Pull requests should include a concise description, linked issue when applicable, test results, and screenshots for UI changes. Note any schema, configuration, or migration steps clearly.
+Each issue should use its own branch, for example `issue-1-spring-api-foundation`. Keep commits small and clear. This project is not in production yet, so completed issue branches can be merged into `main` after verification.
 
 ## Agent-Specific Instructions
 
-Before editing, inspect the current repository state and avoid assuming a framework that is not present. Keep changes scoped, document new commands here, and do not remove user-created files unless explicitly requested.
+Before editing, inspect the current repository state. Keep changes scoped to the active issue and do not remove user-created files unless explicitly requested.
 
 Keep `PROJECT_CONTEXT.md` synchronized with the related QuickClock projects:
 
