@@ -1,7 +1,7 @@
 # Pabelis QuickClock Backend
 
-Backend Spring planejado para o QuickClock. Este projeto vai concentrar API,
-persistencia, regras de negocio compartilhadas e suporte aos relatorios da PWA.
+Backend Spring do QuickClock. Este projeto concentra API, persistencia, regras
+de negocio compartilhadas e suporte aos relatorios da PWA.
 
 ## Por que este projeto existe?
 
@@ -30,6 +30,20 @@ Nao sao tres projetos por bagunca; cada um tem uma responsabilidade clara.
 - Expor dados para dashboard financeiro mensal.
 - Gerar ou apoiar relatorios mensais por empresa.
 
+## Arquitetura
+
+O backend segue arquitetura hexagonal:
+
+```text
+src/main/java/br/com/pabelis/quickclock/
+  domain/       Regras e modelos sem dependencia de framework
+  application/  Casos de uso e portas
+  adapters/     HTTP, persistencia e integracoes
+```
+
+Controllers HTTP devem apenas receber a requisicao, chamar casos de uso e
+devolver resposta. Regras de negocio ficam em `domain/` e `application/`.
+
 ## Regras principais
 
 O app nao controla horario exato. Cada dia pode marcar:
@@ -40,6 +54,49 @@ O app nao controla horario exato. Cada dia pode marcar:
 Relatorios devem considerar somente dias marcados, servicos adicionais e
 orcamentos aprovados. Valores devem ser armazenados em centavos.
 
+## Desenvolvimento
+
+Requisitos:
+
+- Java 21
+- Maven
+- Docker
+
+Rodar testes:
+
+```bash
+mvn test
+```
+
+Rodar a API localmente:
+
+```bash
+mvn spring-boot:run
+```
+
+Verificar saude da API:
+
+```bash
+curl http://localhost:8080/api/health
+```
+
+## Container
+
+Gerar imagem:
+
+```bash
+docker build -t quickclock-backend .
+```
+
+Rodar container:
+
+```bash
+docker run --rm -p 8080:8080 quickclock-backend
+```
+
+O backend sera publicado em uma VPS usando container. Configuracoes de producao
+devem ser feitas por variaveis de ambiente.
+
 ## Contexto compartilhado
 
 As regras de produto ficam em `PROJECT_CONTEXT.md`. Quando ele mudar aqui,
@@ -48,7 +105,8 @@ tambem deve ser atualizado em:
 - `/mnt/c/projetos/ponto-eletronico`
 - `/mnt/z/react/QuickClock`
 
-## Proximo passo
+## Status
 
-Inicializar o projeto Spring Boot neste diretorio e manter a API alinhada ao
-contexto compartilhado.
+A base inicial Spring Boot ja possui health endpoint em `/api/health`, testes e
+Dockerfile. As proximas historias devem implementar banco, empresas,
+configuracoes e regras de negocio conforme as issues do repositorio.
