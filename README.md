@@ -61,6 +61,7 @@ Requisitos:
 - Java 21
 - Maven
 - Docker
+- PostgreSQL para execucao local completa
 
 Rodar testes:
 
@@ -96,6 +97,22 @@ docker run --rm -p 8080:8080 quickclock-backend
 
 O backend sera publicado em uma VPS usando container. Configuracoes de producao
 devem ser feitas por variaveis de ambiente.
+
+## Banco de dados
+
+O runtime usa PostgreSQL. As migrations ficam em
+`src/main/resources/db/migration/` e sao executadas pelo Flyway.
+
+Variaveis principais:
+
+```bash
+DATABASE_URL=jdbc:postgresql://localhost:5432/quickclock
+DATABASE_USERNAME=quickclock
+DATABASE_PASSWORD=quickclock
+```
+
+Nos testes, o projeto usa H2 em memoria no modo PostgreSQL para validar que as
+migrations sobem a partir de um banco limpo.
 
 ## Contexto compartilhado
 
