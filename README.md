@@ -95,8 +95,16 @@ Rodar container:
 docker run --rm -p 8080:8080 quickclock-backend
 ```
 
-O backend sera publicado em uma VPS usando container. Configuracoes de producao
-devem ser feitas por variaveis de ambiente.
+O backend roda localmente no PC em container. O Compose fica no repositorio
+frontend `/mnt/z/react/QuickClock/compose.yaml` e sobe API, PostgreSQL e proxy web.
+Configure o .env do frontend e execute `docker compose up --build --wait` la.
+A API e o banco ficam nas redes Docker, sem portas publicadas no host.
+O acesso pessoal e HTTP pelo IP privado do ZeroTier, sem login ou DNS amigavel.
+
+A imagem usa usuario sem privilegios e curl para o healthcheck HTTP. O endpoint
+`/api/health` indica disponibilidade HTTP; nao e uma verificacao continua do banco.
+Flyway e Hibernate validam o schema na inicializacao. O teste de CRUD e persistencia
+precisa ser realizado contra PostgreSQL para confirmar o funcionamento completo.
 
 ## Banco de dados
 
