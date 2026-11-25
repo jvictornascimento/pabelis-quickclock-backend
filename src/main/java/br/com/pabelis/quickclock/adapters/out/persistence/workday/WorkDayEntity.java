@@ -30,6 +30,10 @@ class WorkDayEntity {
     @Column(nullable = false)
     private boolean workedAfterLunch;
 
+    private Long beforeLunchValueCents;
+
+    private Long afterLunchValueCents;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -45,6 +49,8 @@ class WorkDayEntity {
         LocalDate date,
         boolean workedBeforeLunch,
         boolean workedAfterLunch,
+        Long beforeLunchValueCents,
+        Long afterLunchValueCents,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
     ) {
@@ -53,6 +59,8 @@ class WorkDayEntity {
         this.date = date;
         this.workedBeforeLunch = workedBeforeLunch;
         this.workedAfterLunch = workedAfterLunch;
+        this.beforeLunchValueCents = beforeLunchValueCents;
+        this.afterLunchValueCents = afterLunchValueCents;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -75,6 +83,14 @@ class WorkDayEntity {
 
     boolean isWorkedAfterLunch() {
         return workedAfterLunch;
+    }
+
+    Long getBeforeLunchValueCents() {
+        return beforeLunchValueCents;
+    }
+
+    Long getAfterLunchValueCents() {
+        return afterLunchValueCents;
     }
 
     LocalDateTime getCreatedAt() {

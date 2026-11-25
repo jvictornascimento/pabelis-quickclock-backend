@@ -1,6 +1,7 @@
 package br.com.pabelis.quickclock.adapters.in.web.workday;
 
 import br.com.pabelis.quickclock.application.workday.WorkDayService;
+import br.com.pabelis.quickclock.domain.shared.BusinessException;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.Clock;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -24,9 +26,11 @@ import static br.com.pabelis.quickclock.adapters.in.web.workday.WorkDayResponses
 public class WorkDayController {
 
     private final WorkDayService workDayService;
+    private final Clock clock;
 
-    public WorkDayController(WorkDayService workDayService) {
+    public WorkDayController(WorkDayService workDayService, Clock clock) {
         this.workDayService = workDayService;
+        this.clock = clock;
     }
 
     @GetMapping
@@ -35,13 +39,16 @@ public class WorkDayController {
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
     ) {
+        if (date != null && month != null) {
+            throw new BusinessException("Choose either date or month, not both.");
+        }
         if (date != null) {
             return workDayService.searchByDate(companyId, date).stream()
                 .map(WorkDayResponse::from)
                 .toList();
         }
 
-        YearMonth selectedMonth = month == null ? YearMonth.now() : month;
+        YearMonth selectedMonth = month == null ? YearMonth.now(clock) : month;
         return workDayService.searchByMonth(companyId, selectedMonth).stream()
             .map(WorkDayResponse::from)
             .toList();

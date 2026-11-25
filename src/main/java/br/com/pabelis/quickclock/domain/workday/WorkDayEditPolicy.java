@@ -7,6 +7,9 @@ import java.time.LocalDate;
 public class WorkDayEditPolicy {
 
     public void ensureCanEdit(LocalDate targetDate, LocalDate today) {
+        if (targetDate == null) {
+            throw new BusinessException("Work day date is required.");
+        }
         if (targetDate.isBefore(today)) {
             throw new BusinessException("Old work days are read only.");
         }
