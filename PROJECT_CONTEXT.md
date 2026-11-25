@@ -10,6 +10,32 @@ the shared context is intentionally updated.
 
 ## Related Project Paths
 
+The unified specification is `specs/001-quickclock/spec.md`, with the delivery
+checklist in `specs/001-quickclock/tasks.md` in the Flutter reference repository.
+It is approved for implementation. The requested deployment direction is
+local Docker on the owner's PC, replacing VPS/Cloudflare for the first delivery.
+Keep Spring Boot and PostgreSQL. Approved access uses ZeroTier on the PC and phone,
+with the phone using the React PWA in its browser. Frontend, API, and database run
+in Docker on the PC. The first delivery requires a reachable API to save; there
+is no offline write queue or synchronization. Show server unavailability clearly
+and never confirm an unsaved change. PC, Docker, and ZeroTier must be available.
+Approved first delivery: HTTP via the private ZeroTier IP, no login or friendly
+DNS, no service worker. Validate Safari home screen behavior on the actual phone.
+HTTPS is deferred. Store historical period prices; accept full payments only,
+with simple reversal and no reversal history. Cards have closing and due dates;
+edit one installment or all unpaid installments, preserving paid ones.
+The original Flutter offline rules below describe
+the reference app and do not imply offline writes in the new PWA.
+
+Implemented web workflows use the Spring API and PostgreSQL: daily work,
+additional services, estimate history/approval, monthly reports/PDF, full income
+receipts/reversal, expenses, cards, installments and monthly financial views.
+Report received/pending totals follow its source records even when paid in a
+different month; the finance dashboard follows actual payment dates. Safari and
+ZeroTier device validation, backup/restore and Flutter data import remain pending.
+Legacy period-price backfill uses existing company settings, not reconstructed
+historical prices. Personal database migration requires backup and approval.
+
 - Flutter reference app: `/mnt/c/projetos/ponto-eletronico`
 - Spring backend: `/mnt/z/Spring/QuickClock`
 - React PWA frontend: `/mnt/z/react/QuickClock`

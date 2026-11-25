@@ -14,6 +14,8 @@ final class WorkDayMapper {
             entity.getDate(),
             entity.isWorkedBeforeLunch(),
             entity.isWorkedAfterLunch(),
+            entity.getBeforeLunchValueCents(),
+            entity.getAfterLunchValueCents(),
             entity.getCreatedAt(),
             entity.getUpdatedAt()
         );
@@ -26,6 +28,8 @@ final class WorkDayMapper {
             workDay.date(),
             workDay.workedBeforeLunch(),
             workDay.workedAfterLunch(),
+            workDay.beforeLunchValueCents(),
+            workDay.afterLunchValueCents(),
             workDay.createdAt(),
             workDay.updatedAt()
         );

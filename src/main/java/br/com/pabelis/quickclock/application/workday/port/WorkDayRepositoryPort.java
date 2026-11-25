@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface WorkDayRepositoryPort {
 
+    void lockCompany(Long companyId);
+
     WorkDay save(WorkDay workDay);
 
     Optional<WorkDay> findByCompanyIdAndDate(Long companyId, LocalDate date);

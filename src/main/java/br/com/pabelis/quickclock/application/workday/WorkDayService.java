@@ -1,6 +1,11 @@
 package br.com.pabelis.quickclock.application.workday;
 
 import br.com.pabelis.quickclock.application.company.port.CompanyRepositoryPort;
+import br.com.pabelis.quickclock.application.company.port.CompanySettingsRepositoryPort;
+import br.com.pabelis.quickclock.application.finance.port.FinanceSourceGuard;
+import br.com.pabelis.quickclock.domain.company.CompanySettings;
+import br.com.pabelis.quickclock.domain.company.WeekdaySettings;
+import br.com.pabelis.quickclock.domain.shared.BusinessException;
 import br.com.pabelis.quickclock.application.workday.port.WorkDayRepositoryPort;
 import br.com.pabelis.quickclock.domain.shared.NotFoundException;
 import br.com.pabelis.quickclock.domain.workday.WorkDay;
@@ -19,16 +24,22 @@ public class WorkDayService {
 
     private final WorkDayRepositoryPort workDayRepository;
     private final CompanyRepositoryPort companyRepository;
+    private final CompanySettingsRepositoryPort settingsRepository;
+    private final FinanceSourceGuard financeSourceGuard;
     private final Clock clock;
     private final WorkDayEditPolicy editPolicy;
 
     public WorkDayService(
         WorkDayRepositoryPort workDayRepository,
         CompanyRepositoryPort companyRepository,
+        CompanySettingsRepositoryPort settingsRepository,
+        FinanceSourceGuard financeSourceGuard,
         Clock clock
     ) {
         this.workDayRepository = workDayRepository;
         this.companyRepository = companyRepository;
+        this.settingsRepository = settingsRepository;
+        this.financeSourceGuard = financeSourceGuard;
         this.clock = clock;
         this.editPolicy = new WorkDayEditPolicy();
     }
@@ -57,44 +68,80 @@ public class WorkDayService {
 
     @Transactional
     public WorkDay save(Long companyId, LocalDate date, boolean workedBeforeLunch, boolean workedAfterLunch) {
-        ensureCompanyExists(companyId);
-        ensureCanEdit(date);
+        workDayRepository.lockCompany(companyId);
         LocalDateTime now = now();
+        CompanySettings settings = writableSettings(companyId, date, now);
 
-        WorkDay workDay = workDayRepository.findByCompanyIdAndDate(companyId, date)
-            .map(existing -> existing.update(workedBeforeLunch, workedAfterLunch, now))
-            .orElseGet(() -> WorkDay.create(companyId, date, workedBeforeLunch, workedAfterLunch, now));
+        var existing = workDayRepository.findByCompanyIdAndDate(companyId, date);
+        if (existing.isPresent()) {
+            WorkDay workDay = existing.get();
+            if (workDay.workedBeforeLunch() == workedBeforeLunch && workDay.workedAfterLunch() == workedAfterLunch) {
+                return workDay;
+            }
+            financeSourceGuard.lockAndAssertUnreceived("WORK_REPORT", workDay.id(), companyId);
+            return workDayRepository.save(workDay.update(workedBeforeLunch, workedAfterLunch,
+                settings.halfDayValueCents(), now));
+        }
 
-        return workDayRepository.save(workDay);
+        return workDayRepository.save(WorkDay.create(companyId, date, workedBeforeLunch, workedAfterLunch,
+            settings.halfDayValueCents(), now));
     }
 
     @Transactional
     public WorkDay toggleBeforeLunch(Long companyId, LocalDate date) {
-        WorkDay workDay = getEditableOrCreate(companyId, date);
-        return workDayRepository.save(workDay.toggleBeforeLunch(now()));
+        return toggle(companyId, date, true);
     }
 
     @Transactional
     public WorkDay toggleAfterLunch(Long companyId, LocalDate date) {
-        WorkDay workDay = getEditableOrCreate(companyId, date);
-        return workDayRepository.save(workDay.toggleAfterLunch(now()));
+        return toggle(companyId, date, false);
     }
 
-    private WorkDay getEditableOrCreate(Long companyId, LocalDate date) {
-        ensureCompanyExists(companyId);
-        ensureCanEdit(date);
+    private WorkDay toggle(Long companyId, LocalDate date, boolean beforeLunch) {
+        workDayRepository.lockCompany(companyId);
         LocalDateTime now = now();
-        return workDayRepository.findByCompanyIdAndDate(companyId, date)
-            .orElseGet(() -> WorkDay.create(companyId, date, false, false, now));
+        CompanySettings settings = writableSettings(companyId, date, now);
+        WorkDay workDay = workDayRepository.findByCompanyIdAndDate(companyId, date)
+            .orElseGet(() -> WorkDay.create(companyId, date, false, false, settings.halfDayValueCents(), now));
+        if (workDay.id() != null) {
+            financeSourceGuard.lockAndAssertUnreceived("WORK_REPORT", workDay.id(), companyId);
+        }
+        return workDayRepository.save(workDay.update(
+            beforeLunch ? !workDay.workedBeforeLunch() : workDay.workedBeforeLunch(),
+            beforeLunch ? workDay.workedAfterLunch() : !workDay.workedAfterLunch(),
+            settings.halfDayValueCents(), now));
+    }
+
+    private CompanySettings writableSettings(Long companyId, LocalDate date, LocalDateTime now) {
+        var company = companyRepository.findById(companyId)
+            .orElseThrow(() -> new NotFoundException("Company not found."));
+        if (!company.active()) {
+            throw new BusinessException("Inactive companies cannot register work days.");
+        }
+        editPolicy.ensureCanEdit(date, now.toLocalDate());
+        var settings = settingsRepository.findByCompanyId(companyId)
+            .orElseThrow(() -> new NotFoundException("Company settings not found."));
+        if (!isActiveWeekday(settings.weekdays(), date)) {
+            throw new BusinessException("There is no work scheduled for this weekday.");
+        }
+        return settings;
+    }
+
+    private boolean isActiveWeekday(WeekdaySettings weekdays, LocalDate date) {
+        return switch (date.getDayOfWeek()) {
+            case MONDAY -> weekdays.mondayActive();
+            case TUESDAY -> weekdays.tuesdayActive();
+            case WEDNESDAY -> weekdays.wednesdayActive();
+            case THURSDAY -> weekdays.thursdayActive();
+            case FRIDAY -> weekdays.fridayActive();
+            case SATURDAY -> weekdays.saturdayActive();
+            case SUNDAY -> weekdays.sundayActive();
+        };
     }
 
     private void ensureCompanyExists(Long companyId) {
         companyRepository.findById(companyId)
             .orElseThrow(() -> new NotFoundException("Company not found."));
-    }
-
-    private void ensureCanEdit(LocalDate date) {
-        editPolicy.ensureCanEdit(date, LocalDate.now(clock));
     }
 
     private LocalDateTime now() {

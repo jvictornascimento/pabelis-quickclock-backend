@@ -122,6 +122,28 @@ DATABASE_PASSWORD=quickclock
 Nos testes, o projeto usa H2 em memoria no modo PostgreSQL para validar que as
 migrations sobem a partir de um banco limpo.
 
+As migrations incrementais V2-V4 adicionam precos historicos por periodo,
+historico de orcamentos e financeiro. V2 preenche pontos antigos com o valor
+da configuracao existente (zero se ausente); nao recupera precos historicos
+que nunca foram armazenados. Antes de migrar dados pessoais, fazer backup e
+revisar essa aproximacao com o proprietario. Somente bancos de QA foram migrados.
+
+## Fluxos implementados
+
+- Empresas, expediente e valor por meio periodo.
+- Ponto limitado ao dia atual em America/Sao_Paulo, com snapshot de preco.
+- Servicos e orcamentos com historico, cancelamento e aprovacao idempotente.
+- Relatorio mensal consolidado por empresa; PDF gerado pelo frontend.
+- Recebimento integral por origem, sem duplicidade, e estorno sem historico.
+- Despesas, cartoes, parcelas exatas e edicao de uma ou todas as nao pagas.
+- Dashboard mensal com entradas/saidas realizadas e previstas.
+
+`WORK_REPORT` identifica um dia de trabalho, nao um segundo credito agregado
+do relatorio. Servicos e orcamentos aprovados tambem possuem origem unica.
+Editar ou excluir uma origem recebida exige estornar o recebimento antes.
+Relatorios separam recebido/pendente das suas origens, mesmo que o pagamento
+ocorra em outro mes; o financeiro realizado usa a data efetiva do pagamento.
+
 ## Contexto compartilhado
 
 As regras de produto ficam em `PROJECT_CONTEXT.md`. Quando ele mudar aqui,
@@ -132,6 +154,7 @@ tambem deve ser atualizado em:
 
 ## Status
 
-A base inicial Spring Boot ja possui health endpoint em `/api/health`, testes e
-Dockerfile. As proximas historias devem implementar banco, empresas,
-configuracoes e regras de negocio conforme as issues do repositorio.
+Os fluxos acima possuem testes automatizados e verificacao integrada em
+PostgreSQL 17 isolado. Docker e frontend foram exercitados juntos em QA.
+A validacao no Safari/ZeroTier real, backup/restauracao e migracao do SQLite
+Flutter continuam pendentes na spec central. Nao ha login nem escrita offline.

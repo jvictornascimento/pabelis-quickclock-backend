@@ -16,6 +16,8 @@ final class WorkDayResponses {
         LocalDate date,
         boolean workedBeforeLunch,
         boolean workedAfterLunch,
+        Long beforeLunchValueCents,
+        Long afterLunchValueCents,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
     ) {
@@ -27,6 +29,8 @@ final class WorkDayResponses {
                 workDay.date(),
                 workDay.workedBeforeLunch(),
                 workDay.workedAfterLunch(),
+                workDay.beforeLunchValueCents(),
+                workDay.afterLunchValueCents(),
                 workDay.createdAt(),
                 workDay.updatedAt()
             );
