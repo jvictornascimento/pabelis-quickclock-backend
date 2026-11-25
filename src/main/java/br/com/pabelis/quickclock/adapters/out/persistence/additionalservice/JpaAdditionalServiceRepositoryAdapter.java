@@ -1,6 +1,7 @@
 package br.com.pabelis.quickclock.adapters.out.persistence.additionalservice;
 
 import br.com.pabelis.quickclock.application.additionalservice.port.AdditionalServiceRepositoryPort;
+import br.com.pabelis.quickclock.application.finance.port.FinanceSourceGuard;
 import br.com.pabelis.quickclock.domain.additionalservice.AdditionalService;
 import org.springframework.stereotype.Repository;
 
@@ -12,13 +13,16 @@ import java.util.Optional;
 class JpaAdditionalServiceRepositoryAdapter implements AdditionalServiceRepositoryPort {
 
     private final SpringDataAdditionalServiceRepository repository;
+    private final FinanceSourceGuard financeGuard;
 
-    JpaAdditionalServiceRepositoryAdapter(SpringDataAdditionalServiceRepository repository) {
+    JpaAdditionalServiceRepositoryAdapter(SpringDataAdditionalServiceRepository repository, FinanceSourceGuard financeGuard) {
         this.repository = repository;
+        this.financeGuard = financeGuard;
     }
 
     @Override
     public AdditionalService save(AdditionalService service) {
+        if (service.id() != null) financeGuard.lockAndAssertUnreceived("ADDITIONAL_SERVICE", service.id(), service.companyId());
         return AdditionalServiceMapper.toDomain(repository.save(AdditionalServiceMapper.toEntity(service)));
     }
 
@@ -41,6 +45,7 @@ class JpaAdditionalServiceRepositoryAdapter implements AdditionalServiceReposito
 
     @Override
     public void delete(AdditionalService service) {
+        financeGuard.lockAndAssertUnreceived("ADDITIONAL_SERVICE", service.id(), service.companyId());
         repository.delete(AdditionalServiceMapper.toEntity(service));
     }
 }
